@@ -1,0 +1,9 @@
+data/
+outputs/data_splits.npz
+Miniconda3-latest-Linux-x86_64.sh
+requirements_labcnn.txt
+__pycache__/
+.ipynb_checkpoints/
+*.pyc
+*.pyo
+.DS_Store
