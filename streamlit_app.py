@@ -13,54 +13,39 @@ IMG_SIZE = (128, 128)
 MODEL_PATH = "models/model.keras"
 CLASS_NAMES = ["female", "male"]
 
-APPLE_CSS = """
+CSS = """
 <style>
-/* ── Fonts ── */
 html, body, [class*="css"] {
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
                  "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
 }
+.stApp { background-color: #f5f5f7; }
 
-/* ── Page background ── */
-.stApp {
-    background-color: #f5f5f7;
-}
-
-/* ── Centre column width ── */
 .main .block-container {
-    max-width: 740px;
-    padding-top: 2.8rem;
-    padding-bottom: 3rem;
+    max-width: 900px;
+    padding-top: 2.5rem;
+    padding-bottom: 3.5rem;
 }
 
-/* ── Hero title ── */
 h1 {
-    font-size: 2.3rem !important;
+    font-size: 2.4rem !important;
     font-weight: 700 !important;
     color: #1d1d1f !important;
     letter-spacing: -0.6px;
     line-height: 1.2 !important;
-    margin-bottom: 0.2rem !important;
+    margin-bottom: 0.15rem !important;
 }
-
-/* ── Section headings ── */
 h2, h3 {
-    font-size: 1.25rem !important;
+    font-size: 1.2rem !important;
     font-weight: 600 !important;
     color: #1d1d1f !important;
     letter-spacing: -0.2px;
-    margin-top: 1.6rem !important;
+    margin-top: 1.5rem !important;
 }
+p, li, .stMarkdown p { color: #6e6e73; font-size: 1.05rem; line-height: 1.65; }
 
-/* ── Body copy ── */
-p, li, .stMarkdown p {
-    color: #6e6e73;
-    font-size: 1.08rem;
-    line-height: 1.65;
-}
-
-/* ── File uploader ── */
+/* File uploader */
 [data-testid="stFileUploadDropzone"] {
     border: 1.5px dashed #d2d2d7 !important;
     border-radius: 18px !important;
@@ -72,53 +57,51 @@ p, li, .stMarkdown p {
     background: #f0f7ff !important;
 }
 
-/* ── Metric cards ── */
-[data-testid="metric-container"] {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 1.4rem 1.6rem !important;
-    box-shadow: 0 2px 14px rgba(0,0,0,0.06);
-}
-[data-testid="stMetricLabel"] > div {
-    color: #6e6e73 !important;
-    font-size: 0.86rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-}
-[data-testid="stMetricValue"] > div {
-    color: #1d1d1f !important;
-    font-size: 2.1rem !important;
-    font-weight: 700 !important;
-}
+/* Images */
+[data-testid="stImage"] img { border-radius: 14px; }
 
-/* ── Progress bar ── */
-[data-testid="stProgressBar"] > div {
-    background-color: #e5e5ea !important;
-    border-radius: 10px;
-    height: 7px !important;
-}
-[data-testid="stProgressBar"] > div > div {
-    background: linear-gradient(90deg, #34aadc 0%, #0071e3 100%) !important;
-    border-radius: 10px;
-}
+/* Caption */
+.stCaption, small { color: #8e8e93 !important; font-size: 0.88rem !important; }
 
-/* ── Image ── */
-[data-testid="stImage"] img {
-    border-radius: 16px;
-}
-
-/* ── Caption ── */
-.stCaption, small {
-    color: #8e8e93 !important;
-    font-size: 0.88rem !important;
-}
-
-/* ── Spinner ── */
+/* Spinner */
 .stSpinner > div { border-top-color: #0071e3 !important; }
 
-/* ── Matplotlib figure background ── */
-.stPlot { border-radius: 16px; overflow: hidden; }
+/* Tabs — segmented control estilo macOS */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 4px;
+    background: #e5e5ea;
+    border-radius: 14px;
+    padding: 4px;
+    border-bottom: none !important;
+}
+.stTabs [data-baseweb="tab"] {
+    background: transparent;
+    border-radius: 10px !important;
+    padding: 0.42rem 1.15rem !important;
+    color: #6e6e73 !important;
+    font-size: 0.91rem !important;
+    font-weight: 500 !important;
+    border: none !important;
+    transition: all 0.15s;
+}
+.stTabs [aria-selected="true"] {
+    background: #ffffff !important;
+    color: #1d1d1f !important;
+    font-weight: 600 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12) !important;
+}
+
+/* Status box */
+[data-testid="stStatusWidget"] {
+    border-radius: 14px !important;
+}
+
+/* Expander */
+[data-testid="stExpander"] {
+    background: #ffffff !important;
+    border-radius: 14px !important;
+    border: 1px solid #e5e5ea !important;
+}
 </style>
 """
 
@@ -126,7 +109,6 @@ p, li, .stMarkdown p {
 @st.cache_resource(show_spinner="Cargando modelo…")
 def load_models():
     model = tf.keras.models.load_model(MODEL_PATH)
-
     conv_layers = [l for l in model.layers if isinstance(l, Conv2D)]
     last_conv = conv_layers[-1]
 
@@ -179,125 +161,208 @@ def overlay(img_01: np.ndarray, heatmap_rgb: np.ndarray, alpha: float = 0.45) ->
     return cv2.addWeighted(np.uint8(255 * img_01), 1 - alpha, heatmap_rgb, alpha, 0)
 
 
+def make_figure(panels: list, titles: list) -> plt.Figure:
+    n = len(panels)
+    fig, axes = plt.subplots(1, n, figsize=(n * 4.0, 4.2))
+    axes = list(axes) if n > 1 else [axes]
+    fig.patch.set_facecolor("#ffffff")
+    for ax, panel, title in zip(axes, panels, titles):
+        ax.imshow(panel)
+        ax.set_title(title, fontsize=9.5, fontweight="600", color="#1d1d1f", pad=9)
+        ax.axis("off")
+    plt.tight_layout(pad=1.4)
+    return fig
+
+
 def prediction_card(predicted: str, confidence: float, prob_female: float, prob_male: float) -> str:
     if predicted == "female":
-        label, icon, accent = "Female", "♀", "#ff375f"
+        label, icon, accent = "Femenino", "♀", "#ff375f"
     else:
-        label, icon, accent = "Male", "♂", "#0071e3"
+        label, icon, accent = "Masculino", "♂", "#0071e3"
 
-    bar_female = int(prob_female * 100)
-    bar_male = int(prob_male * 100)
+    bar_f = int(prob_female * 100)
+    bar_m = int(prob_male * 100)
 
     return f"""
     <div style="
         background:#ffffff;
-        border-radius:18px;
-        padding:1.6rem 2rem;
-        box-shadow:0 2px 14px rgba(0,0,0,0.07);
-        margin:1rem 0 1.4rem;
+        border-radius:20px;
+        padding:1.8rem 2.2rem;
+        box-shadow:0 2px 20px rgba(0,0,0,0.08);
+        margin:1rem 0 1.6rem;
     ">
-        <div style="display:flex;align-items:center;gap:1.1rem;margin-bottom:1.2rem;">
-            <span style="font-size:2.2rem;line-height:1;">{icon}</span>
+        <div style="display:flex;align-items:center;gap:1.2rem;margin-bottom:1.5rem;">
+            <div style="
+                width:56px;height:56px;border-radius:50%;
+                background:{accent}18;
+                display:flex;align-items:center;justify-content:center;
+                font-size:1.9rem;line-height:1;
+            ">{icon}</div>
             <div>
-                <p style="margin:0;color:#6e6e73;font-size:0.83rem;text-transform:uppercase;
-                           letter-spacing:0.08em;font-weight:500;">Clase predicha</p>
-                <p style="margin:0;color:{accent};font-size:1.65rem;font-weight:700;
-                           letter-spacing:-0.4px;">{label}</p>
+                <p style="margin:0;color:#8e8e93;font-size:0.80rem;text-transform:uppercase;
+                           letter-spacing:0.09em;font-weight:500;">Clase predicha</p>
+                <p style="margin:0;color:{accent};font-size:1.8rem;font-weight:700;
+                           letter-spacing:-0.5px;line-height:1.15;">{label}</p>
             </div>
-            <div style="margin-left:auto;text-align:right;">
-                <p style="margin:0;color:#6e6e73;font-size:0.83rem;text-transform:uppercase;
-                           letter-spacing:0.08em;font-weight:500;">Confianza</p>
-                <p style="margin:0;color:#1d1d1f;font-size:1.65rem;font-weight:700;">{confidence*100:.1f}%</p>
+            <div style="
+                margin-left:auto;text-align:right;
+                background:{accent}10;border-radius:16px;
+                padding:0.7rem 1.1rem;
+            ">
+                <p style="margin:0;color:#8e8e93;font-size:0.80rem;text-transform:uppercase;
+                           letter-spacing:0.09em;font-weight:500;">Confianza</p>
+                <p style="margin:0;color:{accent};font-size:1.8rem;font-weight:700;
+                           line-height:1.15;">{confidence * 100:.1f}%</p>
             </div>
         </div>
-        <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.3rem;">
-            <span style="font-size:0.87rem;color:#6e6e73;width:52px;">Female</span>
-            <div style="flex:1;height:7px;background:#e5e5ea;border-radius:10px;overflow:hidden;">
-                <div style="width:{bar_female}%;height:100%;
+
+        <div style="display:flex;gap:0.6rem;align-items:center;margin-bottom:0.55rem;">
+            <span style="font-size:0.86rem;color:#6e6e73;width:74px;">Femenino</span>
+            <div style="flex:1;height:8px;background:#f0f0f5;border-radius:10px;overflow:hidden;">
+                <div style="width:{bar_f}%;height:100%;
                              background:linear-gradient(90deg,#ff6b9d,#ff375f);
                              border-radius:10px;"></div>
             </div>
-            <span style="font-size:0.9rem;font-weight:600;color:#ff375f;width:42px;text-align:right;">{prob_female*100:.1f}%</span>
+            <span style="font-size:0.92rem;font-weight:600;color:#ff375f;
+                         width:46px;text-align:right;">{prob_female * 100:.1f}%</span>
         </div>
-        <div style="display:flex;gap:0.5rem;align-items:center;">
-            <span style="font-size:0.87rem;color:#6e6e73;width:52px;">Male</span>
-            <div style="flex:1;height:7px;background:#e5e5ea;border-radius:10px;overflow:hidden;">
-                <div style="width:{bar_male}%;height:100%;
+        <div style="display:flex;gap:0.6rem;align-items:center;">
+            <span style="font-size:0.86rem;color:#6e6e73;width:74px;">Masculino</span>
+            <div style="flex:1;height:8px;background:#f0f0f5;border-radius:10px;overflow:hidden;">
+                <div style="width:{bar_m}%;height:100%;
                              background:linear-gradient(90deg,#34aadc,#0071e3);
                              border-radius:10px;"></div>
             </div>
-            <span style="font-size:0.9rem;font-weight:600;color:#0071e3;width:42px;text-align:right;">{prob_male*100:.1f}%</span>
+            <span style="font-size:0.92rem;font-weight:600;color:#0071e3;
+                         width:46px;text-align:right;">{prob_male * 100:.1f}%</span>
         </div>
     </div>
     """
 
 
-# ---------------------------------------------------------------------------
-# Layout
-# ---------------------------------------------------------------------------
+# ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="CNN — Clasificador de Género", layout="centered")
-st.markdown(APPLE_CSS, unsafe_allow_html=True)
+st.markdown(CSS, unsafe_allow_html=True)
 
+# ── Header ─────────────────────────────────────────────────────────────────────
 st.title("Clasificador de Género")
 st.markdown(
-    "Sube una imagen de un rostro. El modelo predice **female / male** "
-    "y genera los mapas de interpretabilidad **Saliency** y **Grad-CAM**."
+    "Sube una foto de un rostro y la red neuronal predecirá el género, "
+    "mostrando también **cómo llegó a esa conclusión** mediante mapas de calor."
 )
+
+with st.expander("¿Cómo funciona esta app?"):
+    st.markdown("""
+Una **red neuronal convolucional (CNN)** aprende a reconocer patrones visuales en rostros.
+Junto a la predicción, generamos dos tipos de mapas que revelan qué zonas del rostro
+influyeron más en la decisión:
+
+**Saliency Map** — Pinta los píxeles que más cambiaron la predicción del modelo.
+Es como el "resaltador" interno: áreas brillantes = alta influencia.
+
+**Grad-CAM** — Muestra las regiones que más activaron la última capa convolucional.
+Es más preciso espacialmente que el Saliency Map.
+
+Los colores **cálidos** (rojo / amarillo) indican alta importancia;
+los **fríos** (azul / morado) indican menor relevancia para la predicción.
+    """)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-uploaded = st.file_uploader("Selecciona una imagen", type=["jpg", "jpeg", "png"],
-                            label_visibility="collapsed")
+# ── Upload ─────────────────────────────────────────────────────────────────────
+uploaded = st.file_uploader(
+    "Arrastra una imagen o haz clic para seleccionar",
+    type=["jpg", "jpeg", "png"],
+    label_visibility="visible",
+)
 
 if uploaded is not None:
     img_pil = Image.open(uploaded)
 
-    col_img, _ = st.columns([1, 0.01])
-    with col_img:
+    # Small preview + filename, side by side
+    col_prev, col_info = st.columns([1, 2], gap="large")
+    with col_prev:
         st.image(img_pil, caption=uploaded.name, use_container_width=True)
+    with col_info:
+        st.markdown("**Imagen cargada correctamente.**")
+        w, h = img_pil.size
+        st.markdown(
+            f"- Resolución original: **{w} × {h} px**\n"
+            f"- Formato procesado por la CNN: **128 × 128 px**\n\n"
+            "Haz clic en **Analizar** cuando estés listo."
+        )
+        run = st.button("Analizar imagen", type="primary", use_container_width=True)
 
-    model, logit_model, grad_logit_model = load_models()
+    if run:
+        model, logit_model, grad_logit_model = load_models()
 
-    with st.spinner("Analizando imagen…"):
-        img_arr = preprocess(img_pil)
-        prob_male = float(model.predict(img_arr[np.newaxis], verbose=0)[0, 0])
-        prob_female = 1.0 - prob_male
-        predicted = CLASS_NAMES[int(prob_male > 0.5)]
-        confidence = max(prob_male, prob_female)
+        with st.status("Analizando imagen...", expanded=True) as status:
+            st.write("Preprocesando imagen...")
+            img_arr = preprocess(img_pil)
 
-        saliency = compute_saliency(logit_model, img_arr)
-        gradcam = compute_gradcam(grad_logit_model, img_arr)
+            st.write("Ejecutando clasificación con la CNN...")
+            prob_male = float(model.predict(img_arr[np.newaxis], verbose=0)[0, 0])
+            prob_female = 1.0 - prob_male
+            predicted = CLASS_NAMES[int(prob_male > 0.5)]
+            confidence = max(prob_male, prob_female)
 
-    # --- Prediction card ---
-    st.markdown("### Predicción")
-    st.markdown(
-        prediction_card(predicted, confidence, prob_female, prob_male),
-        unsafe_allow_html=True,
-    )
+            st.write("Generando mapas de interpretabilidad...")
+            saliency = compute_saliency(logit_model, img_arr)
+            gradcam = compute_gradcam(grad_logit_model, img_arr)
 
-    # --- Interpretability ---
-    st.markdown("### Mapas de Interpretabilidad")
+            status.update(label="Analisis completo", state="complete", expanded=False)
 
-    sal_heat = to_heatmap(saliency, cv2.COLORMAP_HOT)
-    cam_heat = to_heatmap(gradcam, cv2.COLORMAP_JET)
-    sal_over = overlay(img_arr, sal_heat)
-    cam_over = overlay(img_arr, cam_heat)
+        # ── Prediction card ────────────────────────────────────────────────────
+        st.markdown("### Prediccion del modelo")
+        st.html(prediction_card(predicted, confidence, prob_female, prob_male))
 
-    fig, axes = plt.subplots(1, 4, figsize=(14, 3.5))
-    fig.patch.set_facecolor("#ffffff")
-    for ax, panel, title in zip(
-        axes,
-        [sal_heat, sal_over, cam_heat, cam_over],
-        ["Saliency Map", "Saliency Overlay", "Grad-CAM", "Grad-CAM Overlay"],
-    ):
-        ax.imshow(panel)
-        ax.set_title(title, fontsize=9, fontweight="500", color="#1d1d1f", pad=8)
-        ax.axis("off")
-    plt.tight_layout(pad=1.2)
-    st.pyplot(fig)
-    plt.close(fig)
+        # ── Interpretability maps ──────────────────────────────────────────────
+        st.markdown("### Interpretabilidad visual")
+        st.caption(
+            "La imagen original se muestra al mismo tamaño que los mapas "
+            "para facilitar la comparacion."
+        )
 
-    st.caption(
-        "**Saliency:** píxeles con mayor influencia sobre el logit.  "
-        "**Grad-CAM:** regiones activadas en la última capa convolucional."
-    )
+        original_rgb = np.uint8(255 * img_arr)
+        sal_heat = to_heatmap(saliency, cv2.COLORMAP_HOT)
+        cam_heat = to_heatmap(gradcam, cv2.COLORMAP_JET)
+        sal_over = overlay(img_arr, sal_heat)
+        cam_over = overlay(img_arr, cam_heat)
+
+        tab_gen, tab_sal, tab_cam = st.tabs(
+            ["Vista General", "Saliency Map", "Grad-CAM"]
+        )
+
+        with tab_gen:
+            st.caption(
+                "Original · Saliency Overlay · Grad-CAM Overlay — todos al mismo tamano."
+            )
+            fig = make_figure(
+                [original_rgb, sal_over, cam_over],
+                ["Original", "Saliency Overlay", "Grad-CAM Overlay"],
+            )
+            st.pyplot(fig)
+            plt.close(fig)
+
+        with tab_sal:
+            st.caption(
+                "Los pixeles mas brillantes son los que mas influyeron en la decision del modelo."
+            )
+            fig = make_figure(
+                [sal_heat, sal_over],
+                ["Saliency Map", "Overlay sobre imagen"],
+            )
+            st.pyplot(fig)
+            plt.close(fig)
+
+        with tab_cam:
+            st.caption(
+                "Las regiones en rojo / amarillo son las que mas activo la ultima "
+                "capa convolucional."
+            )
+            fig = make_figure(
+                [cam_heat, cam_over],
+                ["Grad-CAM", "Overlay sobre imagen"],
+            )
+            st.pyplot(fig)
+            plt.close(fig)
